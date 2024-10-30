@@ -1,0 +1,113 @@
+var AdjustUrl =
+  "https://app.adjust.com/1f9hjk9c?engagement_type=fallback_click";
+var installLink =
+  "https://apps.apple.com/us/app/%E4%BB%96ta%E6%98%9F%E7%90%83-%E9%80%A3%E9%BA%A5%E8%AA%9E%E9%9F%B3%E8%81%8A%E5%A4%A9%E4%BA%A4%E5%8F%8B%E5%B9%B3%E8%87%BA/id1664036357?mt=8";
+var hasReported = localStorage.getItem("hasReported");
+console.log(window.AdjustUrl);
+
+//初始化Adjust
+function buildURL(p0, p1, p2, p3, p4, p5, p6, fbclid, fbpid) {
+  if (!p0) p0 = "1f9hjk9c";
+  tracker_token = p0;
+  if (p1 || p2) campaign = p1 + "(" + p2 + ")";
+  else campaign = "";
+  if (p3 || p4) adgroup = p3 + "(" + p4 + ")";
+  else adgroup = "";
+  if (p5 || p6) creative = p5 + "(" + p6 + ")";
+  else creative = "";
+  if (!fbclid) fbclid = "";
+  if (!fbpid) fbpid = "";
+  let params = { campaign, adgroup, creative, fbclid, fbpid };
+  let newURL =
+    "https://app.adjust.com/" +
+    tracker_token +
+    "?" +
+    Object.keys(params)
+      .map((key) => key + "=" + encodeURIComponent(params[key]))
+      .join("&");
+  return newURL;
+}
+function getFbPid() {
+  let fbPid = document.cookie.match(/(^|;) ?_fbp=([^;]*)(;|$)/);
+  if (fbPid) return fbPid[2];
+  else return null;
+}
+var initAdjust = function () {
+  var u = new URLSearchParams(window.location.search);
+  var url = buildURL(
+    u.get("p0"),
+    u.get("p1"),
+    u.get("p2"),
+    u.get("p3"),
+    u.get("p4"),
+    u.get("p5"),
+    u.get("p6"),
+    u.get("fbclid"),
+    getFbPid()
+  );
+  if (url) AdjustUrl = url;
+};
+
+!(function (f, b, e, v, n, t, s) {
+  if (f.fbq) return;
+  n = f.fbq = function () {
+    n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+  };
+  if (!f._fbq) f._fbq = n;
+  n.push = n;
+  n.loaded = !0;
+  n.version = "2.0";
+  n.queue = [];
+  t = b.createElement(e);
+  t.async = !0;
+  t.src = v;
+  s = b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t, s);
+})(
+  window,
+  document,
+  "script",
+  "https://connect.facebook.net/en_US/fbevents.js"
+);
+if (typeof fbq === "function") fbq("init", "1897759460744101");
+if (typeof fbq === "function") fbq("track", "PageView");
+
+// 页面打开上报
+if (!hasReported) {
+  if (typeof report == "function") report("start");
+  if (typeof fbq === "function") {
+    fbq("trackCustom", "start");
+    // fbq('track', 'StartTrial')
+  }
+  if (typeof gtag === "function") gtag("event", "start", "start");
+  localStorage.setItem("hasReported", "1");
+}
+
+// 页面加载完成上报
+window.onload = function () {
+  if (typeof report == "function") report("loaded");
+  if (typeof fbq === "function") fbq("trackCustom", "loaded", "loaded");
+  if (typeof gtag === "function") gtag("event", "loaded", "loaded");
+  localStorage.setItem("hasReported", "2");
+  initAdjust();
+};
+
+var adDownload = function () {
+  //adjust 点击跟踪
+  var v = document.createElement("iframe");
+  v.src = AdjustUrl;
+  v.style.display = "none";
+  document.body.appendChild(v);
+
+  if (typeof report == "function") report("download");
+  if (typeof fbq == "function") {
+    fbq("trackCustom", "download");
+    //fbq('track', 'CompleteRegistration')
+    fbq("track", "ViewContent");
+  }
+  if (typeof gtag == "function") gtag("event", "download", "click");
+
+  //等待一下，等事件都跑完先
+  let start = Date.now();
+  while (Date.now() - start < 600) {}
+};
